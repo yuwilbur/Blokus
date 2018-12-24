@@ -9,8 +9,12 @@ public class BlockEngine : MonoBehaviour
   // Start is called before the first frame update
   void Start()
   {
-    GameObject block = BlockProvider.Create(BlockProvider.B5_010_111_010);
-    // block.Print();
+    int count = 0;
+    foreach(char[,] blueprint in BlockProvider.B_ALL) {
+        GameObject block =  BlockProvider.Create(blueprint);
+        block.transform.position = new Vector3(count*6, 0, 0);
+        count++;
+    }
   }
 
   // Update is called once per frame
