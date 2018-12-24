@@ -5,12 +5,6 @@ using UnityEngine;
 
 public static class BlockProvider
 {
-  // Values of the enum dictates their priority during creation.
-  public enum CellType
-  {
-    EMPTY = 0, OUTLINE_CORNER = 1, OUTLINE_SIDE = 2, BLOCK = 3
-  }
-
   // Character denoting that this location is a block.
   private const char X = 'X';
   // Character denoting that this location is a empty.
@@ -39,62 +33,58 @@ public static class BlockProvider
     {"B5_010_111_010", new char[,] { { O, X, O }, { X, X, X }, { O, X, O } }}
   };
 
-  public static GameObject Create(KeyValuePair<string, char[,]> blueprint)
+  public static Block Create(KeyValuePair<string, char[,]> blueprint)
   {
-    CellType[,] block = ConvertBlueprintToBlock(blueprint.Value);
-    GameObject gameObject = new GameObject();
-    Vector3 position_offset = new Vector3((float)(block.GetLength(0) - 1) / 2.0f, (float)(block.GetLength(1) - 1) / 2.0f, 0);
-    for (int i = 0; i < block.GetLength(0); ++i)
+    Block block = (new GameObject()).AddComponent<Block>() as Block;
+    block.name = blueprint.Key;
+    Piece.Type[,] blockData = ConvertBlueprintToBlock(blueprint.Value);
+    Vector3 positionOffset = new Vector3((float)(blockData.GetLength(0) - 1) / 2.0f, (float)(blockData.GetLength(1) - 1) / 2.0f, 0);
+    for (int i = 0; i < blockData.GetLength(0); ++i)
     {
-      for (int j = 0; j < block.GetLength(1); ++j)
+      for (int j = 0; j < blockData.GetLength(1); ++j)
       {
-        CellType blockType = block[i, j];
-        Color color = Color.white;
+        Piece.Type blockType = blockData[i, j];
+        if (blockType == Piece.Type.EMPTY)
+        {
+          continue;
+        }
         switch (blockType)
         {
-          case CellType.BLOCK:
-            color = Color.white;
+          case Piece.Type.BLOCK:
+            block.AddBlock(new Vector3(i, j, 0) - positionOffset);
             break;
-          case CellType.OUTLINE_CORNER:
-            color = Color.red;
+          case Piece.Type.OUTLINE_CORNER:
+            block.AddCorner(new Vector3(i, j, 0) - positionOffset);
             break;
-          case CellType.OUTLINE_SIDE:
-            color = Color.gray;
+          case Piece.Type.OUTLINE_SIDE:
+            block.AddSide(new Vector3(i, j, 0) - positionOffset);
             break;
-          case CellType.EMPTY:
-          default:
-            continue;
         }
-        GameObject piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        piece.GetComponent<Renderer>().material.color = color;
-        piece.transform.localPosition = new Vector3(i, j, 0) - position_offset;
-        piece.transform.parent = gameObject.transform;
       }
     }
-    gameObject.name = blueprint.Key;
-    return gameObject;
+    return block;
   }
 
-  private static void Print(CellType[,] block)
+  private static void Print(Piece.Type[,] block)
   {
     string log = "";
     for (int i = 0; i < block.GetLength(0); ++i)
     {
       for (int j = 0; j < block.GetLength(1); ++j)
       {
-        if (block[i, j] == CellType.BLOCK)
+        if (block[i, j] == Piece.Type.BLOCK)
         {
           log += "B";
         }
-        else if (block[i, j] == CellType.EMPTY)
+        else if (block[i, j] == Piece.Type.EMPTY)
         {
           log += "E";
         }
-        else if (block[i, j] == CellType.OUTLINE_CORNER)
+        else if (block[i, j] == Piece.Type.OUTLINE_CORNER)
         {
           log += "C";
         }
-        else if (block[i, j] == CellType.OUTLINE_SIDE)
+        else if (block[i, j] == Piece.Type.OUTLINE_SIDE)
         {
           log += "S";
         }
@@ -104,7 +94,7 @@ public static class BlockProvider
     Debug.Log(log);
   }
 
-  private static CellType[,] ConvertBlueprintToBlock(char[,] blueprint)
+  private static Piece.Type[,] ConvertBlueprintToBlock(char[,] blueprint)
   {
     if (blueprint.Rank != 2)
     {
@@ -115,7 +105,7 @@ public static class BlockProvider
       throw new System.ArgumentException("Input structure is empty.");
     }
 
-    CellType[,] block = new CellType[blueprint.GetLength(0) + 2, blueprint.GetLength(1) + 2];
+    Piece.Type[,] block = new Piece.Type[blueprint.GetLength(0) + 2, blueprint.GetLength(1) + 2];
 
     // Set the all the blueprints onto the block.
     for (int i = 0; i < blueprint.GetLength(0); ++i)
@@ -126,24 +116,25 @@ public static class BlockProvider
         {
           continue;
         }
-        AssignCellType(ref block[i + 0, j + 0], CellType.OUTLINE_CORNER);
-        AssignCellType(ref block[i + 1, j + 0], CellType.OUTLINE_SIDE);
-        AssignCellType(ref block[i + 2, j + 0], CellType.OUTLINE_CORNER);
-        AssignCellType(ref block[i + 0, j + 1], CellType.OUTLINE_SIDE);
-        AssignCellType(ref block[i + 1, j + 1], CellType.BLOCK);
-        AssignCellType(ref block[i + 2, j + 1], CellType.OUTLINE_SIDE);
-        AssignCellType(ref block[i + 0, j + 2], CellType.OUTLINE_CORNER);
-        AssignCellType(ref block[i + 1, j + 2], CellType.OUTLINE_SIDE);
-        AssignCellType(ref block[i + 2, j + 2], CellType.OUTLINE_CORNER);
+        AssignCellType(ref block[i + 0, j + 0], Piece.Type.OUTLINE_CORNER);
+        AssignCellType(ref block[i + 1, j + 0], Piece.Type.OUTLINE_SIDE);
+        AssignCellType(ref block[i + 2, j + 0], Piece.Type.OUTLINE_CORNER);
+        AssignCellType(ref block[i + 0, j + 1], Piece.Type.OUTLINE_SIDE);
+        AssignCellType(ref block[i + 1, j + 1], Piece.Type.BLOCK);
+        AssignCellType(ref block[i + 2, j + 1], Piece.Type.OUTLINE_SIDE);
+        AssignCellType(ref block[i + 0, j + 2], Piece.Type.OUTLINE_CORNER);
+        AssignCellType(ref block[i + 1, j + 2], Piece.Type.OUTLINE_SIDE);
+        AssignCellType(ref block[i + 2, j + 2], Piece.Type.OUTLINE_CORNER);
       }
     }
 
     return block;
   }
 
-  private static void AssignCellType(ref CellType cell, CellType target)
+  private static void AssignCellType(ref Piece.Type cell, Piece.Type target)
   {
-    if (target > cell) {
+    if (target > cell)
+    {
       cell = target;
     }
   }
