@@ -10,7 +10,7 @@ public class BlockEngine : MonoBehaviour
   void Start()
   {
     int count = 0;
-    foreach(char[,] blueprint in BlockProvider.B_ALL) {
+    foreach(KeyValuePair<string, char[,]> blueprint in BlockProvider.BLOCKS) {
         GameObject block =  BlockProvider.Create(blueprint);
         block.transform.position = new Vector3(count*6, 0, 0);
         count++;
