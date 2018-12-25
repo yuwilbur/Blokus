@@ -9,9 +9,5 @@ public class Piece : MonoBehaviour
     EMPTY = 0, OUTLINE_CORNER = 1, OUTLINE_SIDE = 2, BLOCK = 3
   }
 
-  public readonly Type m_type;
-
-  public Piece(Type type) {
-      m_type = type;
-  }
+  public Type m_type;
 }

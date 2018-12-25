@@ -37,31 +37,23 @@ public static class BlockProvider
   {
     Block block = (new GameObject()).AddComponent<Block>() as Block;
     block.name = blueprint.Key;
-    Piece.Type[,] blockData = ConvertBlueprintToBlock(blueprint.Value);
-    Vector3 positionOffset = new Vector3((float)(blockData.GetLength(0) - 1) / 2.0f, (float)(blockData.GetLength(1) - 1) / 2.0f, 0);
-    for (int i = 0; i < blockData.GetLength(0); ++i)
+    Piece.Type[,] pieces = ConvertBlueprintToBlock(blueprint.Value);
+    Vector3 size = new Vector3((float)(pieces.GetLength(0)), (float)(pieces.GetLength(1)), 1.0f);
+    Vector3 positionOffset = size / 2.0f - Vector3.one / 2.0f;
+    for (int i = 0; i < pieces.GetLength(0); ++i)
     {
-      for (int j = 0; j < blockData.GetLength(1); ++j)
+      for (int j = 0; j < pieces.GetLength(1); ++j)
       {
-        Piece.Type blockType = blockData[i, j];
-        if (blockType == Piece.Type.EMPTY)
+        Piece.Type pieceType = pieces[i, j];
+        if (pieceType == Piece.Type.EMPTY)
         {
           continue;
         }
-        switch (blockType)
-        {
-          case Piece.Type.BLOCK:
-            block.AddBlock(new Vector3(i, j, 0) - positionOffset);
-            break;
-          case Piece.Type.OUTLINE_CORNER:
-            block.AddCorner(new Vector3(i, j, 0) - positionOffset);
-            break;
-          case Piece.Type.OUTLINE_SIDE:
-            block.AddSide(new Vector3(i, j, 0) - positionOffset);
-            break;
-        }
+        block.AddPiece(new Vector3(i, j, 0) - positionOffset, pieceType);
       }
     }
+    block.SetCollider(size);
+    block.InitRenderables();
     return block;
   }
 

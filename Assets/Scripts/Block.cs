@@ -15,64 +15,100 @@ public class Block : MonoBehaviour
     }
   }
 
-  private HashSet<GameObject> m_blocks = new HashSet<GameObject>();
-  private HashSet<GameObject> m_sides = new HashSet<GameObject>();
-  private HashSet<GameObject> m_corners = new HashSet<GameObject>();
+  private GameObject m_renderable;
+  private HashSet<Piece> m_blocks = new HashSet<Piece>();
+  private HashSet<Piece> m_sides = new HashSet<Piece>();
+  private HashSet<Piece> m_corners = new HashSet<Piece>();
 
-  public void AddBlock(Vector3 position)
+  public void AddPiece(Vector3 position, Piece.Type type)
   {
-    m_blocks.Add(CreatePiece(position));
+    Piece piece = CreatePiece(position);
+    piece.m_type = type;
+    switch (type)
+    {
+      case Piece.Type.BLOCK:
+        m_blocks.Add(piece);
+        break;
+      case Piece.Type.OUTLINE_SIDE:
+        m_sides.Add(piece);
+        break;
+      case Piece.Type.OUTLINE_CORNER:
+        m_corners.Add(piece);
+        break;
+      case Piece.Type.EMPTY:
+      default:
+        break;
+    }
   }
 
-  public void AddSide(Vector3 position)
+  public void SetCollider(Vector3 size)
   {
-    m_sides.Add(CreatePiece(position));
+    if (this.gameObject.GetComponent<BoxCollider>() == null)
+    {
+      this.gameObject.AddComponent<BoxCollider>();
+    }
+    this.gameObject.GetComponent<BoxCollider>().size = size;
   }
 
-  public void AddCorner(Vector3 position)
+  public void InitRenderables()
   {
-    m_corners.Add(CreatePiece(position));
+    m_renderable.transform.parent = this.transform;
+    m_renderable.transform.localPosition = Vector3.zero;
+    foreach (Piece block in m_blocks)
+    {
+      Piece piece = CreatePiece(block.transform.localPosition);
+      piece.transform.parent = m_renderable.transform;
+      piece.GetComponent<Collider>().enabled = false;
+    }
   }
 
-  public Piece.Type GetPieceType(GameObject piece)
-  {
-    return Piece.Type.BLOCK;
-  }
-
-  private GameObject CreatePiece(Vector3 position)
+  private Piece CreatePiece(Vector3 position)
   {
     GameObject piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
-    piece.transform.localPosition = position;
     piece.transform.parent = transform;
+    piece.transform.localPosition = position;
     piece.GetComponent<Renderer>().material.shader = Shader.Find("Transparent/Diffuse");
-    return piece;
+    piece.AddComponent<Piece>();
+    return piece.GetComponent<Piece>();
   }
 
   private void UpdateColors()
   {
-    foreach (GameObject block in m_blocks)
+    foreach (Transform child in m_renderable.transform)
     {
-      block.GetComponent<Renderer>().material.color = m_color;
+      child.GetComponent<Renderer>().material.color = m_color;
     }
-    foreach (GameObject side in m_sides)
+
+    foreach (Piece piece in m_blocks)
     {
-      side.GetComponent<Renderer>().material.color = Color.Lerp(m_color, Color.black, 0.5f);
-      Color color = side.GetComponent<Renderer>().material.color;
-      color.a = 0.0f;
-      side.GetComponent<Renderer>().material.color = color;
+      piece.GetComponent<Renderer>().material.color = Color.Lerp(m_color, Color.black, 0.0f); ;
+      Color color = piece.GetComponent<Renderer>().material.color;
+      color.a = 0.5f;
+      piece.GetComponent<Renderer>().material.color = color;
+      piece.GetComponent<Renderer>().enabled = false;
     }
-    foreach (GameObject corner in m_corners)
+    foreach (Piece piece in m_sides)
     {
-      corner.GetComponent<Renderer>().material.color = Color.Lerp(m_color, Color.black, 0.9f);
-      Color color = corner.GetComponent<Renderer>().material.color;
-      color.a = 0.0f;
-      corner.GetComponent<Renderer>().material.color = color;
+      piece.GetComponent<Renderer>().material.color = Color.Lerp(m_color, Color.black, 0.5f);
+      Color color = piece.GetComponent<Renderer>().material.color;
+      color.a = 0.5f;
+      piece.GetComponent<Renderer>().material.color = color;
+      piece.GetComponent<Renderer>().enabled = false;
+    }
+    foreach (Piece piece in m_corners)
+    {
+      piece.GetComponent<Renderer>().material.color = Color.Lerp(m_color, Color.black, 0.9f);
+      Color color = piece.GetComponent<Renderer>().material.color;
+      color.a = 0.5f;
+      piece.GetComponent<Renderer>().material.color = color;
+      piece.GetComponent<Renderer>().enabled = false;
     }
   }
 
-  private void UpdateCollider()
+  void Awake()
   {
-
+    m_renderable = new GameObject();
+    m_renderable.name = "Renderables";
   }
 
   // Start is called before the first frame update
